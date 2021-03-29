@@ -44,7 +44,10 @@ export default class PriceComparison {
             this.price2 = this.alert.currentPrice
             this.date2 = this.alert.currentdatetime
 
-            let percent = ((this.price2-this.price1)/this.price1)*100    
+            console.log(this.date2, this.price2)
+
+            let percent = ((this.price2-this.price1)/this.price1)*100
+
             if(Math.abs(percent) >= this.alert.percentPriceChange) {
                 let trend = percent >= 0 ? 'up' : 'down'
                 let isUp = trend == 'up' ? ' ! 🚀 ' : ''
