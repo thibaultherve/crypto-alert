@@ -1,3 +1,3 @@
 import Alert from './Alert/Alert'
 
-new Alert('EGLDUSDT', '10M', 2.5, 2*60).start()
+new Alert('EGLDUSDT', '5M', 0.7, 4*60).start()

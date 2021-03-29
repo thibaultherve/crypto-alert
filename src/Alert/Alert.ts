@@ -1,9 +1,8 @@
 import wait from '../utils/wait'
 import PriceComparison from './PriceComparison'
+import api from '../api/binance'
 
-import { EventEmitter } from "events";
-
-
+const binance = new api()
 
 export default class Alert {
     
@@ -12,8 +11,10 @@ export default class Alert {
     readonly percentPriceChange: number
     readonly cooldown: number
 
-    pricesComparison: Array<PriceComparison>
 
+    pricesComparison: Array<PriceComparison>
+    currentPrice: number
+    currentdatetime: string | null
     onCooldown: boolean
 
     constructor(pair: string, interval: string, percentPriceChange: number, cooldown: number) {
@@ -23,17 +24,25 @@ export default class Alert {
         this.cooldown = cooldown
 
         this.pricesComparison = []
-
+        this.currentPrice = 0
+        this.currentdatetime = null
         this.onCooldown = false
     }
 
     start = async () => {
-        while(true) {
-            let pc = new PriceComparison(this)
-            this.pricesComparison.push(pc)
-            pc.start()
 
-            await wait(10)
+        while(true) {
+            this.currentPrice = await binance.getPrice(this.pair)
+            this.currentdatetime = new Date().toLocaleTimeString()
+
+            let pc = new PriceComparison(this)
+
+            this.pricesComparison.push(pc)
+            
+            pc.start()
+            
+            console.log('PC:', this.pricesComparison.length)
+            await wait(1)
         }
     }
 
@@ -49,11 +58,6 @@ export default class Alert {
         if(index > -1)
             this.pricesComparison.splice(index, 1)
         
-        console.log('pc total', this.pricesComparison.length)
     }
-
-
-
-
 
 }

@@ -1,15 +1,17 @@
-import api from '../api/binance'
+
 import wait from '../utils/wait'
 import INTERVALS from '../helpers/intervals'
+import TelegramBot from 'node-telegram-bot-api'
+
+
 
 import Alert from "./Alert";
-
-import { Webhook, MessageBuilder } from 'discord-webhook-node'
-
 import config from '../../config'
 
-const hook = new Webhook(config.DISCORD_WEBHOOK);
-const binance = new api()
+const bot = new TelegramBot(config.TELEGRAM_BOT_TOKEN, { polling: true });
+
+
+
 
 export default class PriceComparison {
 
@@ -32,26 +34,21 @@ export default class PriceComparison {
     }
 
     start = async () => {
-        console.log("PriceComparison start")
-        this.price1 = await binance.getPrice(this.alert.pair)
+        this.price1 = this.alert.currentPrice
         
-        this.date1 = new Date().toISOString()
+        this.date1 = this.alert.currentdatetime
 
         await wait(INTERVALS[this.alert.interval])
 
         if(!this.alert.onCooldown) {
-            this.price2 = await binance.getPrice(this.alert.pair)
-            this.date2 = new Date().toISOString()
+            this.price2 = this.alert.currentPrice
+            this.date2 = this.alert.currentdatetime
+
             let percent = ((this.price2-this.price1)/this.price1)*100    
             if(Math.abs(percent) >= this.alert.percentPriceChange) {
                 let trend = percent >= 0 ? 'up' : 'down'
-                
-                let message = new MessageBuilder()
-                .setTitle('EGLD price alert')
-                .addField('Interval:', this.alert.interval, true)
-                .addField('Price 1:', this.price1.toFixed(2), true)
-                .addField('Price 2:', this.price2.toFixed(2), true)
-                .addField('Percent change:', percent.toFixed(2), true)
+                let isUp = trend == 'up' ? ' ! 🚀 ' : ''
+                let message = `Price is ${trend} by ${percent.toFixed(2)}${isUp}\nInterval : ${this.alert.interval}\nPrice 1 : $${this.price1.toFixed(2)} - ${this.date1} \nPrice 2 : $${this.price2.toFixed(2)} - ${this.date2}\n ${percent.toFixed(2)}%`
                 
                 this.sendAlert(message)
                 this.alert.startCooldown()
@@ -59,10 +56,10 @@ export default class PriceComparison {
         }
 
         this.alert.removePriceComparison(this)
-
     }
 
-    private sendAlert = (message: MessageBuilder) => {
-        hook.send(message)
+    private sendAlert = (message: string) => {
+        bot.sendMessage(config.TELEGRAM_CHAT_ID, message)
+        console.log("ALERT !")
     }
 }
